@@ -128,12 +128,14 @@ begin
 end;
 
 procedure TGaugeChild.SetDuration(const AProc: TProc);
+var
+   LStopWatch: TStopwatch;
 begin
   TMonitor.Enter(Self);
   try
     if not Assigned(AProc) then
       raise EArgumentNilException.Create(StrErrNullProcReference);
-    var LStopWatch := TStopwatch.StartNew;
+    LStopWatch := TStopwatch.StartNew;
     try
       AProc;
     finally
@@ -159,7 +161,8 @@ procedure TGaugeChild.SetToCurrentTime;
 begin
   TMonitor.Enter(Self);
   try
-    FValue := TDateTime.NowUTC.ToUnix();
+
+    FValue := Now;
   finally
     TMonitor.Exit(Self);
   end;
@@ -168,20 +171,25 @@ end;
 { TGauge }
 
 function TGauge.Collect: TArray<TMetricSamples>;
+var
+   LMetric: PMetricSamples;
+   LIndex: Integer;
+   LSample: PSample;
 begin
   TMonitor.Enter(Self);
   try
     SetLength(Result, 1);
-    var LMetric := PMetricSamples(@Result[0]);
+    LMetric := PMetricSamples(@Result[0]);
     LMetric^.MetricName := Self.Name;
     LMetric^.MetricHelp := Self.Help;
     LMetric^.MetricType := 'gauge';
     SetLength(LMetric^.Samples, ChildrenCount);
-    var LIndex := 0;
+    LIndex := 0;
+
     EnumChildren(
       procedure (const ALabelValues: TLabelValues; const AChild: TGaugeChild)
       begin
-        var LSample := PSample(@LMetric^.Samples[LIndex]);
+        LSample := PSample(@LMetric^.Samples[LIndex]);
         LSample^.MetricName := Self.Name;
         LSample^.LabelNames := Self.LabelNames;
         LSample^.LabelValues := ALabelValues;

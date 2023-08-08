@@ -28,8 +28,10 @@ uses
 { TMetricsController }
 
 procedure TMetricsController.GetMetrics();
+var
+   LExposer : TTextExposer;
 begin
-  var LExposer := TTextExposer.Create;
+  LExposer := TTextExposer.Create;
   try
     LExposer.Render(ResponseStream, TCollectorRegistry.DefaultRegistry.Collect);
   finally

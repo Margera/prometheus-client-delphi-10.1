@@ -49,8 +49,11 @@ begin
 end;
 
 procedure TPromWebModule.InitializeMetrics;
+var
+   LRegistry: TCollectorRegistry;
+   LGauge: TGauge;
 begin
-  var LRegistry := TCollectorRegistry.DefaultRegistry;
+  LRegistry := TCollectorRegistry.DefaultRegistry;
   // Counter: http_requests_count
   if not LRegistry.HasCollector('http_requests_count') then
   begin
@@ -69,7 +72,7 @@ begin
   // Gauge: memory_allocated_total
   if not LRegistry.HasCollector('memory_allocated_total') then
   begin
-    var LGauge := TGauge
+    LGauge := TGauge
       .Create('memory_allocated_total', 'Total memory allocated by the process');
     LGauge.SetTo(TMemoryServices.GetTotalAllocatedMemory);
     LGauge.Register();
@@ -98,11 +101,13 @@ end;
 
 procedure TPromWebModule.PromWebModuleMetricActionAction(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+   LWriter: TTextExposer;
 begin
   UpdateLastMinuteMetrics;
   Response.ContentType := 'text/plain';
   Response.ContentStream := TMemoryStream.Create;
-  var LWriter := TTextExposer.Create;
+  LWriter := TTextExposer.Create;
   try
     LWriter.Render(Response.ContentStream,
       TCollectorRegistry.DefaultRegistry.Collect);
@@ -128,9 +133,13 @@ end;
 
 procedure TPromWebModule.WebModuleAfterDispatch(Sender: TObject;
   Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+   LPath: string;
+   LStatus: string;
 begin
-  var LPath := Request.PathInfo;
-  var LStatus := IntToStr(Response.StatusCode);
+  LPath := Request.PathInfo;
+  LStatus := IntToStr(Response.StatusCode);
+
   TCollectorRegistry.DefaultRegistry
     .GetCollector<TCounter>('http_requests_handled')
     .Labels([LPath, LStatus]) // ['path', 'status']

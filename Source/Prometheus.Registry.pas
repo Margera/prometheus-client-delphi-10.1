@@ -118,17 +118,23 @@ begin
 end;
 
 function TCollectorRegistry.Collect: TArray<TMetricSamples>;
+var
+   LSamples: TList<TArray<TMetricSamples>>;
+   LCollectorItem: TCollector;
 begin
   TMonitor.Enter(Self);
   try
     SetLength(Result, 0);
     if FCollectorsToNames.Count <= 0 then
       Exit;
-    var LSamples := TList<TArray<TMetricSamples>>.Create;
+    LSamples := TList<TArray<TMetricSamples>>.Create;
     try
-      for var LCollectorItem in FCollectorsToNames.Keys do
+      for LCollectorItem in FCollectorsToNames.Keys do
         LSamples.Add(LCollectorItem.Collect);
-      Result := TArray.Concat<TMetricSamples>(LSamples.ToArray);
+
+      // TODO: Precisa retornar todos aqui e não só o first  
+      Result :=  LSamples.First;
+//      Result := TArray.Concat<TMetricSamples>(LSamples.ToArray);
     finally
       LSamples.Free;
     end;
@@ -170,19 +176,27 @@ begin
 end;
 
 procedure TCollectorRegistry.Register(ACollector: TCollector);
+var
+   LCollectorNames: TArray<string>;  
+   LNameToCheck: string;
+   LNameToAdd: string;
 begin
   TMonitor.Enter(Self);
   try
     if not Assigned(ACollector) then
       raise EArgumentException.Create(StrErrNullCollector);
-    var LCollectorNames := ACollector.GetNames;
-    for var LNameToCheck in LCollectorNames do
+      
+    LCollectorNames := ACollector.GetNames;
+    
+    for LNameToCheck in LCollectorNames do
     begin
       if FNamesToCollectors.ContainsKey(LNameToCheck) then
         raise EListError.Create(StrErrCollectorNameInUse);
     end;
-    for var LNameToAdd in LCollectorNames do
+    
+    for LNameToAdd in LCollectorNames do
       FNamesToCollectors.AddOrSetValue(LNameToAdd, ACollector);
+      
     FCollectorsToNames.AddOrSetValue(ACollector, LCollectorNames);
   finally
     TMonitor.Exit(Self);
@@ -190,15 +204,18 @@ begin
 end;
 
 procedure TCollectorRegistry.Unregister(ACollector: TCollector);
+var
+   LName: string;
 begin
-  TMonitor.Enter(Self);
-  try
-    FCollectorsToNames.Remove(ACollector);
-    for var LName in ACollector.GetNames do
-      FNamesToCollectors.Remove(LName);
-  finally
-    TMonitor.Exit(Self);
-  end;
+   TMonitor.Enter(Self);
+   try
+      FCollectorsToNames.Remove(ACollector);
+      
+      for LName in ACollector.GetNames do
+         FNamesToCollectors.Remove(LName);
+   finally
+      TMonitor.Exit(Self);
+   end;
 end;
 
 end.

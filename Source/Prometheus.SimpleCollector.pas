@@ -44,7 +44,7 @@ type
     ///  Creates a new instance of this collector.
     /// </summary>
     constructor Create(const AName: string; const AHelp: string = '';
-      const ALabelNames: TLabelNames = []); virtual;
+      const ALabelNames: TLabelNames = nil); virtual;
     /// <summary>
     ///  Performs object cleanup releasing all the owned instances.
     /// </summary>
@@ -99,17 +99,23 @@ uses
 { TSimpleCollector<TChild> }
 
 constructor TSimpleCollector<TChild>.Create(const AName: string;
-  const AHelp: string = ''; const ALabelNames: TLabelNames = []);
+  const AHelp: string = ''; const ALabelNames: TLabelNames = nil);
+var
+   LabelNames: TLabelNamesEqualityComparer;
 begin
   inherited Create();
   TMetricValidator.CheckName(AName);
+
   if Length(ALabelNames) > 0 then
     TLabelValidator.CheckLabels(ALabelNames);
+
   FName := AName;
   FHelp := AHelp;
   FLabelNames := ALabelNames;
-  FChildren := TObjectDictionary<TLabelValues, TChild>.Create([doOwnsValues],
-    TLabelNamesEqualityComparer.Create);
+
+  LabelNames := TLabelNamesEqualityComparer.Create;
+
+  FChildren := TObjectDictionary<TLabelValues, TChild>.Create([doOwnsValues], LabelNames);
   InitializeNoLabelChildIfNeeded;
 end;
 
@@ -126,10 +132,12 @@ begin
 end;
 
 procedure TSimpleCollector<TChild>.EnumChildren(ACallback: TChildrenCallback<TChild>);
+var
+   LChild: TPair<TArray<string>, TChild>;
 begin
   TMonitor.Enter(Self);
   try
-    for var LChild in FChildren do
+    for LChild in FChildren do
       ACallback(LChild.Key, LChild.Value);
   finally
     TMonitor.Exit(Self);

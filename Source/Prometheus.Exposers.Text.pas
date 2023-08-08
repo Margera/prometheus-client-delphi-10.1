@@ -96,8 +96,10 @@ begin
 end;
 
 function TTextExposer.Render(ASamples: TArray<TMetricSamples>): string;
+var
+   LBuffer: TStringBuilder;
 begin
-  var LBuffer := TStringBuilder.Create;
+  LBuffer := TStringBuilder.Create;
   try
     Render(LBuffer, ASamples);
     Result := LBuffer.ToString;
@@ -107,8 +109,10 @@ begin
 end;
 
 procedure TTextExposer.Render(ABuilder: TStringBuilder; ASamples: TArray<TMetricSamples>);
+var
+   LWriter: TStringWriter;
 begin
-  var LWriter := TStringWriter.Create(ABuilder);
+  LWriter := TStringWriter.Create(ABuilder);
   try
     Render(LWriter, ASamples);
   finally
@@ -117,10 +121,13 @@ begin
 end;
 
 procedure TTextExposer.Render(AStream: TStream; ASamples: TArray<TMetricSamples>);
+var
+   LEncoding: TTextEncoding;
+   LWriter: TStreamWriter;
 begin
-  var LEncoding := TTextEncoding.Create;
+  LEncoding := TTextEncoding.Create;
   try
-    var LWriter := TStreamWriter.Create(AStream, LEncoding);
+    LWriter := TStreamWriter.Create(AStream, LEncoding);
     try
       Render(LWriter, ASamples);
     finally
@@ -132,9 +139,14 @@ begin
 end;
 
 procedure TTextExposer.Render(AWriter: TTextWriter; ASamples: TArray<TMetricSamples>);
+var
+  LMetricSet: TMetricSamples;
+  LSample: TSample;
+  LLabelCount: Integer;
+  LLabelIndex: Integer;
 begin
   // TODO: Check output if LMetricSet.Samples == 0
-  for var LMetricSet in ASamples do
+  for LMetricSet in ASamples do
   begin
     // Metric help
     AWriter.Write('# HELP');
@@ -142,8 +154,10 @@ begin
     AWriter.Write(LMetricSet.MetricName);
     AWriter.Write(' ');
     AWriter.Write(EscapeToken(LMetricSet.MetricHelp));
+
     if not LMetricSet.MetricHelp.EndsWith('.') then
       AWriter.Write('.');
+
     AWriter.Write(#10);
 
     // Metric type
@@ -155,7 +169,7 @@ begin
     AWriter.Write(#10);
 
     // Samples
-    for var LSample in LMetricSet.Samples do
+    for LSample in LMetricSet.Samples do
     begin
       // Samples - metric
       AWriter.Write(LSample.MetricName);
@@ -164,13 +178,16 @@ begin
       if LSample.HasLabels then
       begin
         AWriter.Write('{');
-        var LLabelCount := Min(Length(LSample.LabelNames), Length(LSample.LabelValues));
+        LLabelCount := Min(Length(LSample.LabelNames), Length(LSample.LabelValues));
+
         if LLabelCount <= 0 then
           Continue;
-        for var LLabelIndex := 0 to Pred(LLabelCount) do
+
+        for LLabelIndex := 0 to Pred(LLabelCount) do
         begin
           if LLabelIndex > 0 then
             AWriter.Write(',');
+
           AWriter.Write(LSample.LabelNames[LLabelIndex]);
           AWriter.Write('="');
           AWriter.Write(EscapeToken(LSample.LabelValues[LLabelIndex]));

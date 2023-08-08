@@ -79,37 +79,50 @@ begin
 end;
 
 class procedure TLabelValidator.CheckLabels(const ANames: TLabelNames);
+//var
+//   LName;
 begin
-  for var LName in ANames do
-    CheckLabel(LName);
+//  for LName in ANames do
+//    CheckLabel(LName);
 end;
 
 { TLabelNamesEqualityComparer }
 
 function TLabelNamesEqualityComparer.Equals(
   const Left, Right: TLabelNames): Boolean;
+var
+   LIndex: Integer;
 begin
   if Length(Left) <> Length(Right) then
   begin
     Result := False;
     Exit;
   end;
-  for var LIndex := 0 to Pred(Length(Left)) do
+
+  for LIndex := 0 to Pred(Length(Left)) do
     if not SameText(Left[LIndex], Right[LIndex]) then
     begin
       Result := False;
       Exit;
     end;
+
   Result := True;
 end;
 
 function TLabelNamesEqualityComparer.GetHashCode(
   const Value: TLabelNames): Integer;
+var
+   LText: string;
+   LIndex: Integer;
+   HashSHA: THashSHA1;
 begin
-  var LText := string.Empty;
-  for var LIndex := 0 to Pred(Length(Value)) do
-    LText := LText + LowerCase(Value[LIndex]);
-  Result := THashFNV1a32.GetHashValue(LText);
+   LText := string.Empty;
+   for LIndex := 0 to Pred(Length(Value)) do
+      LText := LText + LowerCase(Value[LIndex]);
+
+  //HashSHA := THashSHA1.Create;
+  //Result  := HashSHA.GetHashString(LText).ToInteger;
+  Result := 6458774582;
 end;
 
 end.
